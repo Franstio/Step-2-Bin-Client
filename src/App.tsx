@@ -20,7 +20,7 @@ const localSocket = io(`http://localhost:5000/`,{
 function App() {
   const [allowReopen,setAllowReopen] = useState(localStorage.getItem('allowReopen') == null|| localStorage.getItem('allowReopen') == "" ? false : JSON.parse(localStorage.getItem('allowReopen')!));
   const [hostname, setHostname] = useState('');
-  const [isSubmitAllowed, setIsSubmitAllowed] = useState(false);
+//  const [isSubmitAllowed, setIsSubmitAllowed] = useState(false);
   //const [Getweightbin, setGetweightbin] = useState(localStorage.getItem("WeightBin") == "" || localStorage.getItem("WeightBin")=="undefined" ?  0 : parseFloat(localStorage.getItem("WeightBin")));
   const [instruksimsg, setinstruksimsg] = useState(localStorage.getItem('instruksimsg') == "null" ? "" : localStorage.getItem("instruksimsg"));
   const [bottomLockEnable, setBottomLock] = useState(localStorage.getItem('bottomLockEnable') == null || localStorage.getItem('bottomLockEnable') == "" ? false:  JSON.parse(localStorage.getItem('bottmLockEnable')!));
@@ -32,9 +32,6 @@ function App() {
  // const [maxWeight,setMaxWeight] = useState(localStorage.getItem('maxWeight')== "" || localStorage.getItem('maxWeight') == null ? 0 : parseFloat(localStorage.getItem('maxWeight')));
   const [ipAddress, setIpAddress] = useState('');
   const [bin,setBin] = useState(localStorage.getItem('bin') == "" || localStorage.getItem('bin') == undefined || localStorage.getItem("bin")=="undefined" ? null : JSON.parse(localStorage.getItem('bin')!));
-  const navigation = [
-      { name: 'Dashboard', href: '#', current: true },
-  ]
   useEffect(()=>{
       localStorage.setItem('topProcess',topProcessStatus );
   },[topProcessStatus])
@@ -95,7 +92,7 @@ function App() {
           {
           }*/
       });
-      localSocket.on('reload',(ret)=>{
+      localSocket.on('reload',()=>{
           localStorage.clear();
           window.location.reload();
       });
@@ -112,7 +109,7 @@ function App() {
               localSocket.emit("TriggerWeight",binData);
           }
       }
-      localSocket.on('refresh',function (a){
+      localSocket.on('refresh',function (){
           checkLampRed();
 //            io.emit('TriggerWeight',binData);
       });
@@ -129,7 +126,7 @@ function App() {
       if (processStatus)
       {
           await startObserveBottomSensor(0);
-          localSocket.on('target-0',(res)=>{
+          localSocket.on('target-0',()=>{
               startProcess(false);
               setinstruksimsg("Tutup Penutup Bawah");
               localSocket.off('target-0');
@@ -139,7 +136,7 @@ function App() {
       else
       {
           await startObserveBottomSensor(1);
-          localSocket.on('target-1',(res)=>{
+          localSocket.on('target-1',()=>{
               startProcess(null);
               localSocket.off('target-1');
               if (final)
@@ -166,7 +163,7 @@ function App() {
   }
   const observeTopOpen = async ()=>{
       await startObserveTopSensor(0);
-      localSocket.on('target-top-0',(res)=>{
+      localSocket.on('target-top-0',()=>{
           startTopProcess(false);
           setinstruksimsg("Tutup Penutup Atas");
           localSocket.off('target-top-0');
@@ -174,7 +171,7 @@ function App() {
   }
   const observeTopClose = async ()=>{
      await startObserveTopSensor(1);
-          localSocket.on('target-top-1',(res)=>{
+          localSocket.on('target-top-1',()=>{
               startTopProcess(null);
               localSocket.off('target-top-1');
               setinstruksimsg('Lakukan Verifikasi');
@@ -216,7 +213,7 @@ function App() {
       })
       localSocket.on('Bin',(_bin)=>{
           console.log(_bin);
-          setBin((prev:any)=>({..._bin}));
+          setBin(()=>({..._bin}));
       })
       localSocket.on('sensorUpdate',(data)=>{
           if (!data)
@@ -258,7 +255,7 @@ function App() {
       if (!socket)
           return;
       socket.on('getweight', (data) => {
-          setBin((prev : any)=>({
+          setBin(()=>({
               ...bin,
               weight: data.weight,
               max_weight: data.max_weight
@@ -268,59 +265,9 @@ function App() {
       });
   }, [socket]);
 
-  async function sendLockBottom() {
-      try {
-          const response = await apiClient.post(`http://localhost:5000/lockBottom`, {
-              idLockBottom: 1
-          });
-          setinstruksimsg("buka penutup bawah");
-          setFinal(true);
-      } catch (error) {
-          console.log(error);
-      }
-  };
 
-  const readSensorBottom = async () => {
-      try {
-          const response = await apiClient.post(`http://localhost:5000/sensorbottom`, {
-              SensorBottomId: 1
-          });
-          if (response.status !== 200) {
-              return;
-          }
 
-          const sensorData = response.data.sensorBottom; // Ambil data sensor dari respons
 
-          // Konversi nilai sensor menjadi bentuk boolean
-          return sensorData == 1;
-
-      } catch (error) {
-          console.log(error);
-          return { error: error };
-      }
-  };
-
-  async function sendGreenlampOff() {
-      try {
-          const response = await apiClient.post(`http://${hostname}.local:5000/greenlampoff/`, {
-              idLampGreen: 1
-          });
-          //setinstruksimsg("buka pintu atas");
-      } catch (error) {
-          console.log(error);
-      }
-  }
-
-  async function sendYellowOn() {
-      try {
-          const response = await apiClient.post(`http://${hostname}.local:5000/yellowlampon/`, {
-              idLampYellow: 1
-          });
-          //setinstruksimsg("buka pintu atas");
-      } catch (error) {
-          console.log(error);
-      }
-  }
 
   const handleSubmit = async () => {
       await apiClient.post("http://localhost:5000/End",{
