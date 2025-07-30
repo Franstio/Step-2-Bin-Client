@@ -179,7 +179,7 @@ function App() {
               {
                   setFinal(false);
                   setinstruksimsg('');
-                  return;
+                  return; 
               }
               setinstruksimsg("Tekan Tombol Lock");
               setBottomLock(type == 'Collection'); */
@@ -260,6 +260,7 @@ function App() {
               weight: data.weight,
               max_weight: data.max_weight
           }));
+          localSocket.emit('binInfo',data);
 //            setGetweightbin(prev => data.weight);
 //            setMaxWeight(data.max_weight);
       });
