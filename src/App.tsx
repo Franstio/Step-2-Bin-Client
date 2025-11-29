@@ -258,7 +258,8 @@ function App() {
           setBin(()=>({
               ...bin,
               weight: data.weight,
-              max_weight: data.max_weight
+              max_weight: data.max_weight,
+              pending: data.pending
           }));
           localSocket.emit('binInfo',data);
 //            setGetweightbin(prev => data.weight);
