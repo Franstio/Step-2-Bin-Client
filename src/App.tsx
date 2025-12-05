@@ -4,6 +4,7 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import axios from "axios";
 import io from 'socket.io-client';
 import GaugeComponent from 'react-gauge-component'
+import {HubConnectionBuilder,HubConnectionState} from '@microsoft/signalr';
 const apiClient = axios.create({
     withCredentials: false,
     timeout: 4000
@@ -12,10 +13,7 @@ const socket =  io(`http://${import.meta.env.VITE_TIMBANGAN}/`,{
     reconnection: true,
     autoConnect: true,
 });
-const localSocket = io(`http://localhost:5000/`,{
-    reconnection: true,
-    autoConnect: true,
-    });
+const localSocket = new HubConnectionBuilder().withUrl("http://localhost:5000/hub/bin").withAutomaticReconnect().build();
 
 function App() {
   const [allowReopen,setAllowReopen] = useState(localStorage.getItem('allowReopen') == null|| localStorage.getItem('allowReopen') == "" ? false : JSON.parse(localStorage.getItem('allowReopen')!));
@@ -85,6 +83,7 @@ function App() {
   useEffect(() => {
       if (!localSocket)
           return;
+       localSocket.start();
       localSocket.on('UpdateInstruksi', (instruksi) => {
           
           setinstruksimsg(instruksi);
@@ -100,13 +99,13 @@ function App() {
           console.log(localStorage.getItem("bin"));
           if (localStorage.getItem("bin") == "" || localStorage.getItem("bin")=="undefined" || localStorage.getItem("bin") == null)  
              
-          {setBin({weight:0,max_weight:1});}
+          {setBin({weight:0,max_Weight:1});}
           else
           {
               const binData = JSON.parse(localStorage.getItem("bin")!);
               console.log(binData);
               setBin({...binData});
-              localSocket.emit("TriggerWeight",binData);
+//              localSocket.emit("TriggerWeight",binData);
           }
       }
       localSocket.on('refresh',function (){
@@ -126,19 +125,19 @@ function App() {
       if (processStatus)
       {
           await startObserveBottomSensor(0);
-          localSocket.on('target-0',()=>{
+          localSocket.on('target_0',()=>{
               startProcess(false);
               setinstruksimsg("Tutup Penutup Bawah");
-              localSocket.off('target-0');
+              localSocket.off('target_0');
           });
 
       }
       else
       {
           await startObserveBottomSensor(1);
-          localSocket.on('target-1',()=>{
+          localSocket.on('target_1',()=>{
               startProcess(null);
-              localSocket.off('target-1');
+              localSocket.off('target_1');
               if (final)
               {
                   setFinal(false);
@@ -163,17 +162,17 @@ function App() {
   }
   const observeTopOpen = async ()=>{
       await startObserveTopSensor(0);
-      localSocket.on('target-top-0',()=>{
+      localSocket.on('target_top_0',()=>{
           startTopProcess(false);
           setinstruksimsg("Tutup Penutup Atas");
-          localSocket.off('target-top-0');
+          localSocket.off('target_top_0');
       });
   }
   const observeTopClose = async ()=>{
      await startObserveTopSensor(1);
-          localSocket.on('target-top-1',()=>{
+          localSocket.on('target_top_1',()=>{
               startTopProcess(null);
-              localSocket.off('target-top-1');
+              localSocket.off('target_top_1');
               setinstruksimsg('Lakukan Verifikasi');
               /* if (final)
               {
@@ -254,17 +253,17 @@ function App() {
       });*/
       if (!socket)
           return;
-      socket.on('getweight', (data) => {
-          setBin(()=>({
-              ...bin,
-              weight: data.weight,
-              max_weight: data.max_weight,
-              pending: data.pending
-          }));
-          localSocket.emit('binInfo',data);
-//            setGetweightbin(prev => data.weight);
-//            setMaxWeight(data.max_weight);
-      });
+//       socket.on('getweight', (data) => {
+//           setBin(()=>({
+//               ...bin,
+//               weight: data.weight,
+//               max_weight: data.max_weight,
+//               pending: data.pending
+//           }));
+// //          localSocket.emit('binInfo',data);
+// //            setGetweightbin(prev => data.weight);
+// //            setMaxWeight(data.max_weight);
+//       });
   }, [socket]);
 
 
@@ -296,7 +295,8 @@ function App() {
   }
   // Menghitung nilai gaugeValue sesuai dengan aturan yang ditentukan
   const getGaugeValue = () => {
-      const _final = ((parseFloat(bin?.weight ?? 0)) / (parseFloat(bin?.max_weight ?? 0)) * 100);
+      const _final = ((parseFloat(bin?.weight ?? 0)) / (parseFloat(bin?.max_Weight ?? 0)) * 100);
+      console.log(bin);
       return (_final  >= 100) ? 100 : _final;
   };
 // Dapatkan nilai GaugeComponent yang sesuai
@@ -408,7 +408,7 @@ function App() {
           </div>
           <footer className='flex-1 rounded border flex justify-center gap-40 p-3 bg-white'  >
               <p>Server Status: {ipAddress} {socket?.connected ? "Online":"Offline"}</p>
-              <p>Status PLC : {localSocket?.connected ? "Online": "Offline"}</p>        
+              <p>Status PLC : {localSocket?.state == HubConnectionState.Connected ? "Online": "Offline"}</p>        
               <p>Version : { import.meta.env.VITE_VERSION} </p>
           </footer>
       </main>
