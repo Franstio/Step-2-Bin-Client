@@ -23,20 +23,11 @@ function App() {
   const [instruksimsg, setinstruksimsg] = useState(localStorage.getItem('instruksimsg') == "null" ? "" : localStorage.getItem("instruksimsg"));
   const [bottomLockEnable, setBottomLock] = useState(localStorage.getItem('bottomLockEnable') == null || localStorage.getItem('bottomLockEnable') == "" ? false:  JSON.parse(localStorage.getItem('bottmLockEnable')!));
   const [type, setType] = useState(localStorage.getItem('type'));
-  const [processStatus,startProcess] = useState(localStorage.getItem('bottomProcess') == null || localStorage.getItem('bottomProcess') == ""? null :JSON.parse(localStorage.getItem('bottomProcess')!));
-  const [topProcessStatus,startTopProcess]= useState(localStorage.getItem('topProcess') == null || localStorage.getItem('topProcess')=="" ? null : JSON.parse(localStorage.getItem('topProcess')!  ));
-  const [final,setFinal] = useState(localStorage.getItem('final') == null || localStorage.getItem('final') == "" ? false : JSON.parse(localStorage.getItem('final')!));
   const [sensor,setSensor] = useState([0,0]);
  // const [maxWeight,setMaxWeight] = useState(localStorage.getItem('maxWeight')== "" || localStorage.getItem('maxWeight') == null ? 0 : parseFloat(localStorage.getItem('maxWeight')));
   const [ipAddress, setIpAddress] = useState('');
   const [bin,setBin] = useState(localStorage.getItem('bin') == "" || localStorage.getItem('bin') == undefined || localStorage.getItem("bin")=="undefined" ? null : JSON.parse(localStorage.getItem('bin')!));
-  useEffect(()=>{
-      localStorage.setItem('topProcess',topProcessStatus );
-  },[topProcessStatus])
-  useEffect(()=>{
-      
-      localStorage.setItem('bottomProcess',processStatus );
-  },[processStatus])
+
   /*useEffect(()=>{
       localStorage.setItem("WeightBin",Getweightbin);
   },[Getweightbin])*/
@@ -48,10 +39,7 @@ function App() {
       
       localStorage.setItem('type',type ?? "");
   },[type])
-  useEffect(()=>{
-      
-      localStorage.setItem('final',final);
-  },[final])
+
   useEffect(()=>{
       localStorage.setItem('bin',JSON.stringify(bin));
   },[bin])
@@ -85,7 +73,6 @@ function App() {
           return;
        localSocket.start();
       localSocket.on('UpdateInstruksi', (instruksi) => {
-          
           setinstruksimsg(instruksi);
           /*if (instruksi && instruksi != '' && instruksi != null)
           {
@@ -117,98 +104,16 @@ function App() {
       },5000);
       return ()=>clearInterval(intervalId);
   }, [localSocket]);
-  const startObserveBottomSensor =async (target:any)=>{
-      await apiClient.post('http://localhost:5000/observeBottomSensor',{readTarget:target});
-
-  }
-  const observeBottom = async ()=>{
-      if (processStatus)
-      {
-          await startObserveBottomSensor(0);
-          localSocket.on('target_0',()=>{
-              startProcess(false);
-              setinstruksimsg("Tutup Penutup Bawah");
-              localSocket.off('target_0');
-          });
-
-      }
-      else
-      {
-          await startObserveBottomSensor(1);
-          localSocket.on('target_1',()=>{
-              startProcess(null);
-              localSocket.off('target_1');
-              if (final)
-              {
-                  setFinal(false);
-                  setinstruksimsg('');
-                  return;
-              }
-              setinstruksimsg("Tekan Tombol Lock");
-              setBottomLock(type == 'Collection');
-
-          });
-      }
-  }
-  useEffect(()=>{
-      if (processStatus == undefined ||  processStatus==null)
-          return;
-      observeBottom();
-  },[processStatus]);
-
-  const startObserveTopSensor =async (target:any)=>{
-      await apiClient.post('http://localhost:5000/observeTopSensor',{readTargetTop:target});
-
-  }
-  const observeTopOpen = async ()=>{
-      await startObserveTopSensor(0);
-      localSocket.on('target_top_0',()=>{
-          startTopProcess(false);
-          setinstruksimsg("Tutup Penutup Atas");
-          localSocket.off('target_top_0');
-      });
-  }
-  const observeTopClose = async ()=>{
-     await startObserveTopSensor(1);
-          localSocket.on('target_top_1',()=>{
-              startTopProcess(null);
-              localSocket.off('target_top_1');
-              setinstruksimsg('Lakukan Verifikasi');
-              /* if (final)
-              {
-                  setFinal(false);
-                  setinstruksimsg('');
-                  return; 
-              }
-              setinstruksimsg("Tekan Tombol Lock");
-              setBottomLock(type == 'Collection'); */
-
-          });
-  }
-  useEffect(()=>{
-      if (topProcessStatus == undefined || topProcessStatus==null)
-          return;
-      if (topProcessStatus)
-      {
-          observeTopOpen();
-      }
-      else
-      {
-          observeTopClose();
-      }
-  },[topProcessStatus]);
+  
   useEffect(() => {
       if (!localSocket)
           return;
       localSocket.on('GetType', (type) => {
           setType(type);
-          if (type=='Collection')
-              startProcess(true);
-          else
-              startTopProcess(true);
       });
       localSocket.on('reopen',(lock)=>{
           setAllowReopen(lock.reopen);
+          setBottomLock(type=="Collection");
       })
       localSocket.on('Bin',(_bin)=>{
           console.log(_bin);
@@ -283,11 +188,6 @@ function App() {
       setinstruksimsg("");
 //       setinstruksimsg("Buka pintu bawah");
   }
-  useEffect(()=>{
-      if (final==true)
-          startProcess(final);
-  },[final])
-
   const handleReopen = async ()=>{
       const url = `http://localhost:5000/${ type=='Collection' ? 'lockBottom' : 'lockTop'}`;
       const payload = type=='Collection' ? {idLockBottom:1} : {idLockTop:1};
