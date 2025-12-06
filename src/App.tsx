@@ -99,37 +99,34 @@ function App() {
           checkLampRed();
 //            io.emit('TriggerWeight',binData);
       });
-      const intervalId = setInterval(()=>{
-          checkLampRed()
-      },5000);
-      return ()=>clearInterval(intervalId);
+      localSocket.on('GetType', (type) => {
+        setType(type);
+    });
+    localSocket.on('reopen',(lock)=>{
+        setAllowReopen(lock.reopen);
+        const check = type=="Collection";
+        setBottomLock(...check);
+    })
+    localSocket.on('Bin',(_bin)=>{
+        console.log(_bin);
+        setBin(()=>({..._bin}));
+    })
+    localSocket.on('sensorUpdate',(data)=>{
+        if (!data)
+            return;
+        const _data = [];
+        for (let i=0;i<data.length;i++)
+        {
+            _data.push(data[i] ?? 0);
+        }
+        setSensor(_data);
+    });
+    //   const intervalId = setInterval(()=>{
+    //       checkLampRed()
+    //   },5000);
+    //   return ()=>clearInterval(intervalId);
   }, [localSocket]);
   
-  useEffect(() => {
-      if (!localSocket)
-          return;
-      localSocket.on('GetType', (type) => {
-          setType(type);
-      });
-      localSocket.on('reopen',(lock)=>{
-          setAllowReopen(lock.reopen);
-          setBottomLock(type=="Collection");
-      })
-      localSocket.on('Bin',(_bin)=>{
-          console.log(_bin);
-          setBin(()=>({..._bin}));
-      })
-      localSocket.on('sensorUpdate',(data)=>{
-          if (!data)
-              return;
-          const _data = [];
-          for (let i=0;i<data.length;i++)
-          {
-              _data.push(data[i] ?? 0);
-          }
-          setSensor(_data);
-      });
-  }, [localSocket]);
   useEffect(() => {
       axios.get('http://localhost:5000/hostname', { withCredentials: false })
           .then(response => {
