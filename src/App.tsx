@@ -295,9 +295,9 @@ function App() {
                   </button>
                       :
                   <button
-                      className={`flex-1 p-4 border rounded max-w-xs flex justify-center items-center font-semibold ${bottomLockEnable ? 'bg-blue-500 text-white' : 'bg-white text-black'
+                      className={`flex-1 p-4 border rounded max-w-xs flex justify-center items-center font-semibold ${(bottomLockEnable && allowReopen) ? 'bg-blue-500 text-white' : 'bg-white text-black'
                           }`}
-                      disabled={!bottomLockEnable}
+                      disabled={(!bottomLockEnable || !allowReopen)}
                       onClick={handleSubmit}
                   >
                       Lock Bottom
