@@ -110,6 +110,7 @@ function App() {
           return;
       localSocket.on('GetType', (type) => {
           setType(type);
+          setBottomLock(type=="Collection");
       });
       localSocket.on('reopen',(lock)=>{
           setAllowReopen(lock.reopen);
