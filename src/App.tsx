@@ -104,7 +104,9 @@ function App() {
     });
     localSocket.on('reopen',(lock)=>{
         setAllowReopen(lock.reopen);
+        console.log(type);
         const check = type=="Collection";
+        console.log(check);
         setBottomLock(...check);
     })
     localSocket.on('Bin',(_bin)=>{
